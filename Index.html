@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipt Parser</title>
+    <style>
+        body { font-family: sans-serif; max-width: 500px; margin: 40px auto; padding: 20px; background: #f9f9f9; color: #333; }
+        .box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        input, select, button { width: 100%; padding: 10px; margin-top: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #000; color: #fff; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background: #222; }
+        pre { background: #eee; padding: 10px; overflow-x: auto; border-radius: 4px; font-size: 14px; max-height: 300px; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+</head>
+<body>
+
+<div class="box">
+    <h2>Receipt Parser</h2>
+    
+    <label>1. Upload Receipt Photo</label>
+    <input type="file" id="imageInput" accept="image/*">
+
+    <label>2. Choose Output Format</label>
+    <select id="formatSelect">
+        <option value="text">Raw Text</option>
+        <option value="json">JSON Object</option>
+    </select>
+
+    <button id="processBtn">Extract & Convert</button>
+
+    <div id="outputSection" style="display:none; margin-top: 20px;">
+        <h3>Output:</h3>
+        <pre id="outputResult"></pre>
+    </div>
+</div>
+
+<script>
+document.getElementById('processBtn').addEventListener('click', async () => {
+    const fileInput = document.getElementById('imageInput');
+    const format = document.getElementById('formatSelect').value;
+    const outputSection = document.getElementById('outputSection');
+    const outputResult = document.getElementById('outputResult');
+
+    if (!fileInput.files[0]) {
+        alert('Please upload an image first.');
+        return;
+    }
+
+    outputSection.style.display = 'block';
+    outputResult.textContent = 'Processing image... (This may take a moment)';
+
+    try {
+        // Run OCR directly in the browser
+        const result = await Tesseract.recognize(fileInput.files[0], 'eng');
+        const rawText = result.data.text;
+
+        if (format === 'text') {
+            outputResult.textContent = rawText;
+        } else if (format === 'json') {
+            // Clean lines and structure into a basic key-value array
+            const lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            const jsonObj = {
+                extracted_at: new Date().toISOString(),
+                raw_lines: lines
+            };
+            outputResult.textContent = JSON.stringify(jsonObj, null, 2);
+        }
+    } catch (error) {
+        outputResult.textContent = 'Error processing image: ' + error.message;
+    }
+});
+</script>
+
+</body>
+</html>
